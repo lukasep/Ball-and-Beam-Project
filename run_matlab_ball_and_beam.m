@@ -1,12 +1,23 @@
+% EE222: Nonlinear Systems 
+% Lab Project Phase I: Simulations
+% Soomi Lee, Arvind Kruthiventy, Emily Lukas
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MATLAB Simulation Script
+% This script visualizes and calculates the score of the implemented
+% controller. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 close all
-clear all
+clear;
+clc;
 
 %% General Settings.
 % Initial state.
 x0 = [-0.19; 0.00; 0; 0];
 t0 = 0;
 % Simulation time.
-T = 10;
+T = 90;
 % Sampling time of the controller
 dt = 0.01;
 % ode function to use.
@@ -40,7 +51,7 @@ tstart = tic;
 while ~end_simulation
     %% Determine control input.
     tstart = tic; % DEBUG    
-    [u, theta_d] = controller_handle.stepController(t, x(1), x(3));
+    [u, theta_d] = controller_handle.stepController(t, x(1), x(2), x(3), x(4));
     u = min(u, u_saturation);
     u = max(u, -u_saturation);
     if verbose
@@ -67,7 +78,7 @@ while ~end_simulation
     ref_vs = [ref_vs, v_ball_ref];    
 end % end of the main while loop
 %% Add control input for the final timestep.
-[u, theta_d] = controller_handle.stepController(t, x(1), x(3));
+[u, theta_d] = controller_handle.stepController(t, x(1), x(2), x(3), x(4));
 u = min(u, u_saturation);
 u = max(u, -u_saturation);
 us = [us, u];
@@ -90,7 +101,7 @@ plot_tracking_errors(ts, ps, ref_ps);
 plot_controls(ts, us);
 
 if plot_animation
-    animate_ball_and_beam(ts, ps, thetas, ref_ps, save_video);
+    animate_ball_and_beam(ts, ps, thetas, ref_ps, save_video, 10);
 end
 
 function print_log(t, x, u)
