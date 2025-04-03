@@ -6,7 +6,7 @@ Soomi Lee, Arvind Kruthiventy, Emily Lukas
 
 **Final Controllers:**
 - Feedback Linearization with LQR
-- DLQR
+- DLQR  
 **Observer:**
 - Luenberger Observer
 
