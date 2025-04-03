@@ -1,6 +1,6 @@
 # UC Berkeley EE222/ME237 Nonlinear Systems Ball and Beam Project
 
-**Lab Project Phase I: Simulations  **
+**Lab Project Phase I: Simulations**  
 Soomi Lee, Arvind Kruthiventy, Emily Lukas  
 4 April 2025  
 
