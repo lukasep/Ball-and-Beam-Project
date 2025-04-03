@@ -1,6 +1,6 @@
 # UC Berkeley EE222/ME237 Nonlinear Systems Ball and Beam Project
 
-Lab Project Phase I: Simulations  
+**Lab Project Phase I: Simulations  **
 Soomi Lee, Arvind Kruthiventy, Emily Lukas  
 4 April 2025  
 
@@ -11,7 +11,7 @@ Observer:
 - Luenberger Observer
 
 **Results:**
-Feedback Linearization with LQR (no observer):
+Feedback Linearization with LQR (no observer):  
 https://github.com/user-attachments/assets/40cfcfb5-cd9b-4e5e-88f5-d397bc236799
 
 Feedback Linearization with LQR (observer):
