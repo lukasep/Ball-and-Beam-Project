@@ -1,8 +1,8 @@
 # UC Berkeley EE222/ME237 Nonlinear Systems Ball and Beam Project
 
-Lab Project Phase I: Simulations
-Soomi Lee, Arvind Kruthiventy, Emily Lukas
-4 April 2025
+Lab Project Phase I: Simulations  
+Soomi Lee, Arvind Kruthiventy, Emily Lukas  
+4 April 2025  
 
 **Final Controllers:**
 - Feedback Linearization with LQR
