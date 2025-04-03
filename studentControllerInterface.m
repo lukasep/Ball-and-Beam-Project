@@ -38,22 +38,26 @@ classdef studentControllerInterface < matlab.System
         ol_est_dot = [0 ; 0.00; 0; 0]; 
         % LQR params
         Q = zeros(4,4);
-        R = 0.5;
+        R = 0.05;
         lie1_func;
         lie2_func;
         lie3_func;
         lie4_func;
         y_func;
         K;
+        A = [0, 1, 0, 0; 0, 0, 1 , 0;0, 0, 0,1; 0, 0, 0, 0 ]; 
+        B = [0; 0; 0; 1]; 
+        C = [1, 0, 0, 0; 0, 0, 1, 0]; 
+        Ad = zeros(4,4); 
+        Bd = zeros(4,1);
+        Cd = zeros(2, 4); 
         new_est = [-0.19, 0, 0, 0]
         v = 0 
         init_state = [0.19, 0, 0, 0]'; 
         
-        % Luenberger Observer 
-        x_hat = zeros(4,1);
-        L_observer;
     end
     methods(Access = protected)
+
         function V_servo = stepImpl(obj, t, ball_pos, ball_vel, beam_ang, beam_ang_vel)
             % This is the main function called every iteration. You have to implement
             % the controller in this function, bu you are not allowed to
@@ -65,9 +69,7 @@ classdef studentControllerInterface < matlab.System
             %   beam_angle: servo motor angle provided by the encoder of the motor (rad)
             %   beam_angular_vel: angular velocity of the beam (rad/s)
             % Output:
-            %   V_servo: voltage to the servo input.
-
-            %% Feedback Linearization Controller with LQR (try 1 and 2)
+            %   V_servo: voltage to the servo input
             % Safety Params
             beam_ang_min = -pi/4;
             beam_ang_max = pi/4;
@@ -75,12 +77,7 @@ classdef studentControllerInterface < matlab.System
             % Extract reference trajectory at the current timestep.
             [p_ball_ref, v_ball_ref, a_ball_ref] = get_ref_traj(t);
             %observer 
-  
-
-            % Apply the LQR gain matrix to calculate the virtual control input
-            % The negative sign ensures negative feedback (reducing error)
-            % obj.K is the optimal gain matrix calculated by LQR
-            % v is then the virtua input for the linearized system
+ 
             
 
             %LQR for system linearized around trajectory
@@ -96,8 +93,8 @@ classdef studentControllerInterface < matlab.System
             error_x3 = beam_ang ; 
             error_x4 = beam_ang_vel; 
             error = [error_x1; error_x2; error_x3; error_x4];
-            K = obj.lqr_linear(obj.init_state, ref);
-            v = K * error;
+            K = obj.lqr_linear(obj.init_state, ref,dt);
+            v = -K * error;
         
             V_servo =v;
             %Observer called here, runs after controller because we need
@@ -127,67 +124,6 @@ classdef studentControllerInterface < matlab.System
             
             % V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
             % V_servo = v; 
-
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%             % Calc the errors
-%             error_x1 = obj.y_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - p_ball_ref;
-%             error_x2 = obj.lie1_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - v_ball_ref;
-%             error_x3 = obj.lie2_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - a_ball_ref;
-%             error_x4 = obj.lie3_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - 0;
-%             error = [error_x1; error_x2; error_x3; error_x4];
-% 
-%             % Apply the LQR gain matrix to calculate the virtual control input
-%             % The negative sign ensures negative feedback (reducing error)
-%             % obj.K is the optimal gain matrix calculated by LQR
-%             % v is then the virtua input for the linearized system
-%             v = - obj.K * error;
-% 
-%             % Apply the feedback linearization func
-%             V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-       
-            % Time step
-            dt = 0.01;
-            
-            % Linearized system matrices
-            A = zeros(4,4);
-            A(1:3,2:4) = eye(3);
-            B = [0; 0; 0; 1];
-            % Ball position and beam angle
-            C = [1 0 0 0; 
-                 0 0 1 0];
-            % Measurement vector
-            y_meas = [ball_pos; beam_ang];
-            
-            % Temporary LQR error
-            error_est = [ obj.y_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - p_ball_ref;
-                          obj.lie1_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - v_ball_ref;
-                          obj.lie2_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - a_ball_ref;
-                          obj.lie3_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - 0 ];
-            v_temp = - obj.K * error_est;
-
-            V_servo_temp = obj.control_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4), v_temp);
-            
-%             obj.x_hat = obj.x_hat + dt * (A * obj.x_hat + B * V_servo_temp + obj.L_observer * (y_meas - C * obj.x_hat));
-            obj.x_hat = obj.x_hat + dt * (A * obj.x_hat + B * v_temp + obj.L_observer * (y_meas - C * obj.x_hat));
-
-            
-            % Errors
-            error_x1 = obj.y_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - p_ball_ref;
-            error_x2 = obj.lie1_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - v_ball_ref;
-            error_x3 = obj.lie2_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - a_ball_ref;
-            error_x4 = obj.lie3_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4)) - 0;
-            error = [error_x1; error_x2; error_x3; error_x4];
-            
-            % Virtual control input
-            v = - obj.K * error;
-            
-            % Apply the feedback linearization func
-            V_servo = obj.control_func(obj.x_hat(1), obj.x_hat(2), obj.x_hat(3), obj.x_hat(4), v);
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
             % Restict to the safe region as in the original script (I
             % tightened this a bit)
             if beam_ang > beam_ang_max
@@ -195,7 +131,7 @@ classdef studentControllerInterface < matlab.System
             elseif beam_ang < beam_ang_min
                 V_servo = max(V_servo, 10 * (beam_ang_min - beam_ang));
             end
-            
+
             obj.t_prev = t;
         end
     end
@@ -211,9 +147,6 @@ classdef studentControllerInterface < matlab.System
             % Set up LQR: try 2
             obj = setupLQR(obj);
             
-
-            % Observer
-            obj = setupObserver(obj);
         end
         
         function [V_servo, theta_d] = stepController(obj, t, ball_pos, ball_vel, beam_angle, beam_angular_vel)
@@ -337,15 +270,19 @@ classdef studentControllerInterface < matlab.System
             Q = zeros(4,4);
             Q(1, 1) = 5;
             R = 0.001; 
-            % sys = ss(jacb,B, zeros(2, 4), zeros(2, 1)); 
-            % sysd = c2d(sys, dt); 
-            % 
+            sys = ss(jacb,B, zeros(2, 4), zeros(2, 1)); 
+            sysd = c2d(sys, 0.01); 
+            Ad = sysd.A; 
+            Bd = sysd.B; 
+
             % K = obj.ARESolve(jacb, B, Q, R); 
-            obj.Q(1,1) = 30;  % Weight on position error
-            obj.Q(2, 2) = 5; 
+            obj.Q(1,1) = 300;  % Weight on position error
+            obj.Q(2, 2) = 100;
+            obj.R = 10; 
             obj.Q(3,3) = 0; 
             obj.Q(4,4) = 0; 
-            K = lqr(jacb, B, obj.Q, obj.R);
+            % K = lqr(jacb, B, obj.Q, obj.R);
+            K = obj.ARESolve(Ad, Bd, obj.Q, obj.R);
               
         end
         function obj = luoberger_obs(obj, ball_pos, beam_ang,v, dt)
@@ -355,13 +292,9 @@ classdef studentControllerInterface < matlab.System
             new_est = obj.ol_est_dot; 
             obj.ol_est = obj.ol_est + dt * new_est; 
         end  
-        function K = ARESolve(obj, A, B, Q, R, dt)
-            sys = ss(A,B,zeros(2,4), zeros(2, 1)); 
-            sysd = c2d(sys, dt); 
-            A = sysd.A;  
-            B = sysd.B; 
+        function K = ARESolve(obj, A, B, Q, R)
             Pk = Q; 
-            for i = 1:50
+            for i = 1:100
                 Pk = A' * Pk * A + Q - A' * Pk * B * inv(R + B' * Pk * B) * B' * Pk * A; 
                 % disp(Pk)
             end
@@ -369,22 +302,6 @@ classdef studentControllerInterface < matlab.System
             K = -inv(R + B' * Pk * B)*B'*Pk*A; 
         end 
         function obj = ekf(obj, ball)
-        end
-        
-        function obj = setupObserver(obj)
-            A = zeros(4,4);
-            A(1:3,2:4) = eye(3);
-            C = [1 0 0 0; 
-                 0 0 1 0];  
-
-            % Desired observer poles
-%             desired_poles = [-1, -1, -2, -3];
-            desired_poles = [-10, -11, -12, -13];
-%             desired_poles = [-20, -21, -22, -23];
-%             desired_poles = [-30, -31, -32, -33];
-            obj.L_observer = place(A', C', desired_poles)';
-            
-            obj.x_hat = zeros(4,1);
         end
     end
 end
