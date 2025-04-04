@@ -76,6 +76,7 @@ classdef studentControllerInterface < matlab.System
             
             % Extract reference trajectory at the current timestep.
             [p_ball_ref, v_ball_ref, a_ball_ref] = get_ref_traj(t);
+            dt = t - obj.t_prev;
             %observer 
             dt = t - obj.t_prev;
             if obj.fl_lin == true
@@ -93,30 +94,28 @@ classdef studentControllerInterface < matlab.System
                 K = obj.Feedback_LQR(dt); 
                 v = K * error;
                 V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
-           
+                
             % disp(state_vec)
             % Apply the feedback linearization func
             else
-           
-
-            %LQR for system linearized around trajectory
+    
+                %LQR for system linearized around trajectory
+                
+                A = zeros(4,4);
+                A(1:3,2:4) = eye(3);
+                B = [0; 0; 0; 1];
+                
+                state = [ball_pos; ball_vel; beam_ang; beam_ang_vel];
+                ref = [p_ball_ref; v_ball_ref; 0; 0]; 
+                error_x1 = ball_pos - p_ball_ref; 
+                error_x2 = ball_vel - v_ball_ref; 
+                error_x3 = beam_ang ; 
+                error_x4 = beam_ang_vel; 
+                error = [error_x1; error_x2; error_x3; error_x4];
+                K = obj.lqr_linear(obj.init_state, ref,dt);
+                v = -K * error;
             
-            
-            A = zeros(4,4);
-            A(1:3,2:4) = eye(3);
-            B = [0; 0; 0; 1];
-            
-            state = [ball_pos; ball_vel; beam_ang; beam_ang_vel];
-            ref = [p_ball_ref; v_ball_ref; 0; 0]; 
-            error_x1 = ball_pos - p_ball_ref; 
-            error_x2 = ball_vel - v_ball_ref; 
-            error_x3 = beam_ang ; 
-            error_x4 = beam_ang_vel; 
-            error = [error_x1; error_x2; error_x3; error_x4];
-            K = obj.lqr_linear(obj.init_state, ref,dt);
-            v = -K * error;
-        
-            V_servo =v;
+                V_servo =v;
             end
             %Observer called here, runs after controller because we need
             %feedback linearizations virtual control for estimation
