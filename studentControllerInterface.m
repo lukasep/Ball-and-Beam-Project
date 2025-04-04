@@ -1,4 +1,4 @@
-% EE222: Nonlinear Systems
+             % EE222: Nonlinear Systems
 % Lab Project Phase I: Simulations
 % Soomi Lee, Arvind Kruthiventy, Emily Lukas
 
@@ -26,7 +26,7 @@ classdef studentControllerInterface < matlab.System
         % 
         % 0.6;  
         
-        fl_lin = False; 
+        fl_lin = false; 
         % deriv gain
         L = [22.9338 , 1.0388 ; 
              130.7798 , 12.977; 
@@ -77,6 +77,7 @@ classdef studentControllerInterface < matlab.System
             % Extract reference trajectory at the current timestep.
             [p_ball_ref, v_ball_ref, a_ball_ref] = get_ref_traj(t);
             %observer 
+            dt = t - obj.t_prev;
             if obj.fl_lin == true
                 error_x1 = obj.y_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - p_ball_ref;
                 error_x2 = obj.lie1_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - v_ball_ref;
@@ -89,7 +90,7 @@ classdef studentControllerInterface < matlab.System
                 % The negative sign ensures negative feedback (reducing error)
                 % obj.K is the optimal gain matrix calculated by LQR
                 % v is then the virtua input for the linearized system
-                K = obj.Feedback_LQR(); 
+                K = obj.Feedback_LQR(dt); 
                 v = K * error;
                 V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
            
@@ -99,7 +100,7 @@ classdef studentControllerInterface < matlab.System
            
 
             %LQR for system linearized around trajectory
-            dt = t - obj.t_prev;
+            
             
             A = zeros(4,4);
             A(1:3,2:4) = eye(3);
@@ -147,7 +148,7 @@ classdef studentControllerInterface < matlab.System
             % disp(eig(obj.Ad - obj.L * obj.Cd))
             % disp(obj.Bd)
             obj = setupFeedbackLinearization(obj);
-            obj.fl_lin = true; 
+            obj.fl_lin = false; 
             % Set up LQR: try 2
             
         end
@@ -206,20 +207,19 @@ classdef studentControllerInterface < matlab.System
             obj.y_func = @(x1,x2,x3,x4) x1;
         end
         
-        function [K] = Feedback_LQR(obj)
+        function [K] = Feedback_LQR(obj,dt)
             % LQR setup
             
             % Define system matrices
             A = zeros(4,4);
             A(1:3,2:4) = eye(3);
-            B = [0; 0; 0; 1];
-            sys = ss(A,B, zeros(2, 4), zeros(2, 1)); 
-            sysd = c2d(sys, 0.01);
-            obj.Q(1,1) = 300; 
-            obj.Q(2,2) = 5; 
-            obj.R = 0.01; 
-            Ad = sysd.A; 
-            Bd = sysd.B;
+            B = [0; 0; 0; 1]; 
+            
+            obj.Q(1,1) = 500; 
+            obj.Q(2,2) = 50; 
+            obj.R = 1; 
+            
+            [Ad, Bd] = obj.cont2discrete(A,B, dt); 
             % Compute LQR gain
             % obj.K = lqr(A, B, obj.Q, obj.R);
             K = obj.ARESolve(Ad, Bd, obj.Q, obj.R); 
@@ -246,21 +246,16 @@ classdef studentControllerInterface < matlab.System
                     0, 0, 0, 1; 
                     0, 0, 0, -1/tau]; 
             B = [0; 0; 0; -k/tau];
-            Q = zeros(4,4);
-            Q(1, 1) = 5;
-            R = 0.001; 
-            sys = ss(jacb,B, zeros(2, 4), zeros(2, 1)); 
-            sysd = c2d(sys, 0.01); 
-            Ad = sysd.A; 
-            Bd = sysd.B; 
+            
 
             % K = obj.ARESolve(jacb, B, Q, R); 
             obj.Q(1,1) = 300;  % Weight on position error
             obj.Q(2, 2) = 100;
-            obj.R = 10; 
+            obj.R = 4; 
             obj.Q(3,3) = 0; 
             obj.Q(4,4) = 0; 
             % K = lqr(jacb, B, obj.Q, obj.R);
+            [Ad, Bd] = obj.cont2discrete(jacb,B, dt); 
             K = obj.ARESolve(Ad, Bd, obj.Q, obj.R);
               
         end
@@ -281,6 +276,12 @@ classdef studentControllerInterface < matlab.System
             end
            
             K = -inv(R + B' * Pk * B)*B'*Pk*A; 
+        end 
+        
+        function [Ad, Bd] = cont2discrete(obj, A, B, dt)
+            Ad = expm(A * dt); 
+            B_func = @(t) expm(A.*t) * B; 
+            Bd = integral(B_func, 0, dt, ArrayValued=true);
         end 
         
     end
