@@ -18,7 +18,7 @@ classdef studentControllerInterface < matlab.System
         control_func;
         
         %% CHOOSE WHICH CONTROLLER TO USE:
-        fl_lin = true; % true to use Controller 1, false to use Controller 2
+        fl_lin = false; % true to use Controller 1, false to use Controller 2
 
         %% 
         % deriv gain
@@ -215,9 +215,9 @@ classdef studentControllerInterface < matlab.System
             A(1:3,2:4) = eye(3);
             B = [0; 0; 0; 1]; 
             
-            obj.Q(1,1) = 550; % make this 550 for method 1
-            obj.Q(2,2) = 50; % make this 50 for method 1
-            obj.R = 1;        % make this 1 for method 1
+            obj.Q(1,1) = 550; % made this 550 for method 1
+            obj.Q(2,2) = 50;  % made this 50 for method 1
+            obj.R = 1;        % made this 1 for method 1
             
             [Ad, Bd] = obj.cont2discrete(A,B, dt); 
             % Compute LQR gain

@@ -25,9 +25,9 @@ ode_func = @ode45;
 % print log for each timestep if true.
 verbose = false;
 % plot animation if true.
-plot_animation = false;
+plot_animation = true;
 % save animation to video if true.
-save_video = false;
+save_video = true;
 
 controller_handle = studentControllerInterface();
 u_saturation = 10;
