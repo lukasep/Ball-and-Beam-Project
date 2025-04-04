@@ -156,84 +156,52 @@ classdef studentControllerInterface < matlab.System
         end
     end
 
+
     methods(Access = private)
-        % function error = get_fl_error(state, ref)
-        % 
-        % end 
         function obj = setupFeedbackLinearization(obj)
             %% Feedback Linearization: TRY #1
-            % 1. Define symbolic variables
-            % State variables based on the ball_and_beam.pdf:
-            %   ball_pos (x1) - Position of ball on beam [m]
-            %   ball_vel (x2) - Velocity of ball [m/s]
-            %   beam_angle (x3) - Angle of beam [rad]
-            %   beam_angular_vel (x4) - Angular velocity of beam [rad/s]
-
-            % Input and parameters:
-            %   u - Control input (voltage to servo) [V]
-            %   g - Gravitational acceleration [m/s^2]
-            %   rg - Radius of ball [m]
-            %   L - Length of beam [m]
-            %   K - Servo motor gain [rad/(V*s)]
-            %   tau - Servo motor time constant [s]
-            %   v - Virtual input after linearization
-
-            syms x1 x2 x3 x4 u g rg L K tau v real
-
-            %% 2. Define system dynamics: dx/dt = f(x) + g(x)*u
-            % Nonlinear dynamics of the ball and beam system
-            f = [x2;  % dx1/dt = x2 (ball velocity)
-                (5*g*rg/(7*L)) * sin(x3) - (5/7) * ((L/2) - x1) * ((rg/L)^2) * x4^2 * cos(x3)^2;  % dx2/dt (ball acceleration)
-                x4;  % dx3/dt = x4 (beam angular velocity)
-                -x4/tau];  % dx4/dt (beam angular acceleration (without control for now))
-
-            % Control input vector (only affects x4 aka beam angular acceleration)
-            u_vec = [0; 0; 0; K/tau];
-
-            % Combined dynamics: dx/dt = f(x) + g(x)*u
-            state_vector = [x1; x2; x3; x4];
-
-            %% 3. Feedback Linearization Procedure
-            % Define output (we want to control the ball position on the baem)
-            y = x1;
-
-            % Step 1: Compute Lie derivs
-            lie1 = simplify(jacobian(y, state_vector) * (f + u_vec*u));
-            lie2 = simplify(jacobian(lie1, state_vector) * (f + u_vec*u));
-            lie3 = simplify(jacobian(lie2, state_vector) * (f + u_vec*u));
-
-            % Step 2: Get rid of u off of the 3rd and 4th derivatives
-            lie3 = simplify(expand(lie3) - (-(5*K*rg^2*u*x4*cos(x3)^2)/(7*L*tau) + (10*K*rg^2*u*x1*x4*cos(x3)^2)/(7*L^2*tau)));
-            % I had to manually su
-
-            % get lie4 without u
-            lie4 = jacobian(lie3, state_vector) * (f + u_vec*u);
-            lie4_exp = expand(lie4);
-
-            % Step 3: get control input u to achieve v = lie4
-            control_law = simplify(solve(lie4 == v, u));
-
-            %% 4. Given parameters from the PDF
+            %% Given parameters from the PDF
             ball_rad = 0.0254;   % Ball radius [m]
             beam_len = 0.4255;   % Beam length [m]
             g_val = 9.81;         % Gravitational acceleration [m/s^2]
             servo_gain = 1.5;       % Servo motor gain [rad/(V*s)]
             tau_val = 0.025;  % Motor time constant [s]
+            
+            % Constants for simplicity
+            const_1 = 5*g_val*ball_rad/(7*beam_len);      % const_1 = 5*g*rg/(7*L)
+            const_2 = (5/7)*(ball_rad/beam_len)^2;        % const_2 = 5/7*(rg/L)^2
+            
+            %% Computed Lie functions
+            obj.lie1_func = @(x1,x2,x3,x4) x2;
+            obj.lie2_func = @(x1,x2,x3,x4) const_1*sin(x3) - const_2*((beam_len/2) - x1)*x4.^2.*cos(x3).^2;
+            obj.lie3_func = @(x1,x2,x3,x4) const_2*x2*x4.^2.*cos(x3).^2 + const_1*x4.*cos(x3) + ...
+                2*const_2*((beam_len/2)-x1)*x4.^3.*cos(x3).*sin(x3) + (2*const_2/tau_val)*((beam_len/2)-x1)*x4.^2.*cos(x3).^2;
+            
+            % lie4 = phi(x) + psi(x) * u
+            % phi(x)
+            phi_func = @(x1,x2,x3,x4) ( (-2*const_2*x4.^3.*cos(x3).*sin(x3) - (2*const_2/tau_val)*x4.^2.*cos(x3).^2).*x2 ...
+                  + (const_2*x4.^2.*cos(x3).^2).*(const_1*sin(x3) - const_2*((beam_len/2)-x1)*x4.^2.*cos(x3).^2) ...
+                  + (-2*const_2*x2.*x4.^2.*cos(x3).*sin(x3) - const_1*x4.*sin(x3) ...
+                     + 2*const_2*((beam_len/2)-x1)*x4.^3.*(cos(x3).^2 - sin(x3).^2) ...
+                     - (4*const_2/tau_val)*((beam_len/2)-x1)*x4.^2.*cos(x3).*sin(x3)).*x4 ...
+                  + (2*const_2*x2.*x4.*cos(x3).^2 + const_1*cos(x3) ...
+                     + 6*const_2*((beam_len/2)-x1)*x4.^2.*cos(x3).*sin(x3) ...
+                     + (4*const_2/tau_val)*((beam_len/2)-x1)*x4.*cos(x3).^2) .* (-x4/tau_val) );
+            
+            % psi(x)
+            psi_func = @(x1,x2,x3,x4) ( 2*const_2*x2.*x4.*cos(x3).^2 + const_1*cos(x3) ...
+                     + 6*const_2*((beam_len/2)-x1)*x4.^2.*cos(x3).*sin(x3) ...
+                     + (4*const_2/tau_val)*((beam_len/2)-x1)*x4.*cos(x3).^2 )*(servo_gain/tau_val);
 
-            % Subs params in
-            u_real = subs(control_law, {g, rg, L, K, tau}, {g_val, ball_rad, beam_len, servo_gain, tau_val});
-            f = subs(f, {g, rg, L, K, tau}, {g_val, ball_rad, beam_len, servo_gain, tau_val});
-            lie1 = subs(lie1, {g, rg, L, K, tau}, {g_val, ball_rad, beam_len, servo_gain, tau_val});
-            lie2 = subs(lie2, {g, rg, L, K, tau}, {g_val, ball_rad, beam_len, servo_gain, tau_val});
-            lie3 = subs(lie3, {g, rg, L, K, tau}, {g_val, ball_rad, beam_len, servo_gain, tau_val});
-
-            obj.control_func = matlabFunction(u_real, 'Vars', [state_vector' v]);
-            obj.y_func = matlabFunction(y, 'Vars', state_vector');
-            obj.lie1_func = matlabFunction(lie1, 'Vars', state_vector');
-            obj.lie2_func = matlabFunction(lie2, 'Vars', state_vector');
-            obj.lie3_func = matlabFunction(lie3, 'Vars', state_vector');
+            obj.lie4_func = @(x1,x2,x3,x4,u) phi_func(x1,x2,x3,x4) + psi_func(x1,x2,x3,x4)*u;
+            
+            %% Feedback linearization control law u = (v - phi(x)) / psi(x).
+            obj.control_func = @(x1,x2,x3,x4,v) (v - phi_func(x1,x2,x3,x4)) / psi_func(x1,x2,x3,x4);
+            
+            %% Output function: y = x1.
+            obj.y_func = @(x1,x2,x3,x4) x1;
         end
-
+        
         function obj = setupLQR(obj)
             % LQR setup
             
