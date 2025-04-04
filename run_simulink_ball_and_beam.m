@@ -23,5 +23,5 @@ plot_tracking_errors(ts, ps, ref_ps);
 plot_controls(ts, us);
 
 if plot_animation
-    animate_ball_and_beam(ts, ps, thetas, ref_ps, save_video);
+    animate_ball_and_beam(ts, ps, thetas, ref_ps, save_video, 10);
 end
