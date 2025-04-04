@@ -101,10 +101,10 @@ classdef studentControllerInterface < matlab.System
             %feedback linearizations virtual control for estimation
             obj.luoberger_obs(ball_pos, beam_ang, v, dt);  
             obj.init_state = obj.ol_est;
-            ball_pos = obj.ol_est(1); 
-            ball_vel = obj.ol_est(2); 
-            beam_ang = obj.ol_est(3); 
-            beam_ang_vel = obj.ol_est(4);
+            % ball_pos = obj.ol_est(1); 
+            % ball_vel = obj.ol_est(2); 
+            % beam_ang = obj.ol_est(3); 
+            % beam_ang_vel = obj.ol_est(4);
             
             error_x1 = obj.y_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - p_ball_ref;
             error_x2 = obj.lie1_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - v_ball_ref;
@@ -117,12 +117,12 @@ classdef studentControllerInterface < matlab.System
             % The negative sign ensures negative feedback (reducing error)
             % obj.K is the optimal gain matrix calculated by LQR
             % v is then the virtua input for the linearized system
-            
-            % v = - obj.K * error;
+            K = obj.Feedback_LQR(); 
+            v = K * error;
             % disp(state_vec)
             % Apply the feedback linearization func
             
-            % V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
+            V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
             % V_servo = v; 
             % Restict to the safe region as in the original script (I
             % tightened this a bit)
@@ -145,7 +145,6 @@ classdef studentControllerInterface < matlab.System
             obj = setupFeedbackLinearization(obj);
             
             % Set up LQR: try 2
-            obj = setupLQR(obj);
             
         end
         
@@ -202,17 +201,23 @@ classdef studentControllerInterface < matlab.System
             obj.y_func = @(x1,x2,x3,x4) x1;
         end
         
-        function obj = setupLQR(obj)
+        function [K] = Feedback_LQR(obj)
             % LQR setup
             
             % Define system matrices
             A = zeros(4,4);
             A(1:3,2:4) = eye(3);
             B = [0; 0; 0; 1];
-
+            sys = ss(A,B, zeros(2, 4), zeros(2, 1)); 
+            sysd = c2d(sys, 0.01);
+            obj.Q(1,1) = 300; 
+            obj.Q(2,2) = 5; 
+            obj.R = 0.01; 
+            Ad = sysd.A; 
+            Bd = sysd.B;
             % Compute LQR gain
             % obj.K = lqr(A, B, obj.Q, obj.R);
-            % obj.K = obj.ARESolve(A, B, obj.Q, obj.R); 
+            K = obj.ARESolve(Ad, Bd, obj.Q, obj.R); 
         end
         function K = lqr_linear(obj, state, ref, dt)
             %state equations
@@ -262,14 +267,13 @@ classdef studentControllerInterface < matlab.System
         end  
         function K = ARESolve(obj, A, B, Q, R)
             Pk = Q; 
-            for i = 1:100
+            for i = 1:400
                 Pk = A' * Pk * A + Q - A' * Pk * B * inv(R + B' * Pk * B) * B' * Pk * A; 
                 % disp(Pk)
             end
            
             K = -inv(R + B' * Pk * B)*B'*Pk*A; 
         end 
-        function obj = ekf(obj, ball)
-        end
+        
     end
 end
