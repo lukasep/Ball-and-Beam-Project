@@ -118,7 +118,7 @@ classdef studentControllerInterface < matlab.System
                 V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
            
                
-                error
+
             % Apply the feedback linearization fu
            
 
@@ -159,10 +159,6 @@ classdef studentControllerInterface < matlab.System
         
             V_servo =v;
             end
-
-            % Observer called here, runs after controller because we need
-            % feedback linearizations virtual control for estimation
-            obj.luoberger_obs(ball_pos, beam_ang, v, dt);  
 
 
             % Observer called here, runs after controller because we need
