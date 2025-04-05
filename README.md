@@ -14,7 +14,7 @@ Soomi Lee, Arvind Kruthiventy, Emily Lukas
 **Results:**  
 Controller 1:  
 Sine wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller1video.mp4  
-Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controlelr1_sqaure.mp4
+Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controlelr1_sqaure.mp4  
 -Average Tracking Error: 0.0005  
 -Average Energy Consumption: 0.0091  
 -Safety Constraint Violation: 0  
@@ -24,7 +24,9 @@ Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/mai
 **Total Score: 0.98**
 
 
-Controller 2: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller2video.mp4  
+Controller 2:  
+Sine wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller2video.mp4  
+Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller2_square.mp4  
 -Average Tracking Error: 0.0004  
 -Average Energy Consumption: 0.0309  
 -Safety Constraint Violation: 0  
