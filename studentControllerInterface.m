@@ -1,25 +1,25 @@
-             % EE222: Nonlinear Systems
-% Lab Project Phase I: Simulations
-% Soomi Lee, Arvind Kruthiventy, Emily Lukas
+%EE222: Nonlinear Systems
+%Lab Project Phase I: Simulations
+%Soomi Lee, Arvind Kruthiventy, Emily Lukas
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Our Controller Interface:
-% TRY 1: Just feedback linearization. Didn't work super well alone. I tuned
-% the values of kp and kd a lot but they just weren't great.
-% TRY 2: Added LQR. Does work with score of 0.91!
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Our Controller Interface:
+%TRY 1: Just feedback linearization. Didn't work super well alone. I tuned
+%the values of kp and kd a lot but they just weren't great.
+%TRY 2: Added LQR. Does work with score of 0.91!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 classdef studentControllerInterface < matlab.System
     properties (Access = private)
-        %% You can add values that you want to store and updae while running your controller.
+        % You can add values that you want to store and updae while running your controller.
         % For more information of the supported data type, see
         % https://www.mathworks.com/help/simulink/ug/data-types-supported-by-simulink.html
         t_prev = -1;
         theta_d = 0;
         V_servo = 0; 
         % our feedback linearization control function
-        control_func;
-        
+        % control_func;
+        % 
         % tune gains (this was from try 1)
         % kp = 0.1;  % prop gain
         % kd = 
@@ -33,7 +33,7 @@ classdef studentControllerInterface < matlab.System
              0.9570 , 23.0662; 
              10.9830 , 132.2187]; 
         % L = ones(4, 2) * 100; 
-     
+        % 
         ol_est = [0; 0.00; 0; 0]; 
         ol_est_dot = [0 ; 0.00; 0; 0]; 
         % LQR params
@@ -44,6 +44,7 @@ classdef studentControllerInterface < matlab.System
         lie3_func;
         lie4_func;
         y_func;
+        control_func;
         K;
         A = [0, 1, 0, 0; 0, 0, 1 , 0;0, 0, 0,1; 0, 0, 0, 0 ]; 
         B = [0; 0; 0; 1]; 
@@ -51,9 +52,8 @@ classdef studentControllerInterface < matlab.System
         Ad = zeros(4,4); 
         Bd = zeros(4,1);
         Cd = zeros(2, 4); 
-        new_est = [-0.19, 0, 0, 0]
-        v = 0 
-        init_state = [0.19, 0, 0, 0]'; 
+        new_est = [-0.19, 0, 0, 0] 
+        init_state = [-0.19, 0, 0, 0]'; 
         
     end
     methods(Access = protected)
@@ -73,12 +73,15 @@ classdef studentControllerInterface < matlab.System
             % Safety Params
             beam_ang_min = -pi/4;
             beam_ang_max = pi/4;
-            
+            % 
             % Extract reference trajectory at the current timestep.
             [p_ball_ref, v_ball_ref, a_ball_ref] = get_ref_traj(t);
-            dt = t - obj.t_prev;
-            %observer 
-            dt = t - obj.t_prev;
+            % observer 
+            if t - obj.t_prev == 0
+                dt = 0.001; 
+            else
+                dt = t - obj.t_prev;
+            end
             if obj.fl_lin == true
                 error_x1 = obj.y_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - p_ball_ref;
                 error_x2 = obj.lie1_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - v_ball_ref;
@@ -92,42 +95,44 @@ classdef studentControllerInterface < matlab.System
                 % obj.K is the optimal gain matrix calculated by LQR
                 % v is then the virtua input for the linearized system
                 K = obj.Feedback_LQR(dt); 
-                v = K * error;
+                v = -K * error;
                 V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
-                
-            % disp(state_vec)
+           
+               
+                error
             % Apply the feedback linearization func
             else
-    
-                %LQR for system linearized around trajectory
-                
-                A = zeros(4,4);
-                A(1:3,2:4) = eye(3);
-                B = [0; 0; 0; 1];
-                
-                state = [ball_pos; ball_vel; beam_ang; beam_ang_vel];
-                ref = [p_ball_ref; v_ball_ref; 0; 0]; 
-                error_x1 = ball_pos - p_ball_ref; 
-                error_x2 = ball_vel - v_ball_ref; 
-                error_x3 = beam_ang ; 
-                error_x4 = beam_ang_vel; 
-                error = [error_x1; error_x2; error_x3; error_x4];
-                K = obj.lqr_linear(obj.init_state, ref,dt);
-                v = -K * error;
+           
+
+            % LQR for system linearized around trajectory
             
-                V_servo =v;
+            
+            A = zeros(4,4);
+            A(1:3,2:4) = eye(3);
+            B = [0; 0; 0; 1];
+            
+            state = [ball_pos; ball_vel; beam_ang; beam_ang_vel];
+            ref = [p_ball_ref; v_ball_ref; 0; 0]; 
+            error_x1 = ball_pos - p_ball_ref; 
+            error_x2 = ball_vel - v_ball_ref; 
+            error_x3 = beam_ang ; 
+            error_x4 = beam_ang_vel; 
+            error = [error_x1; error_x2; error_x3; error_x4];
+            K = obj.lqr_linear(obj.init_state, ref,dt);
+            v = -K * error;
+        
+            V_servo =v;
             end
-            %Observer called here, runs after controller because we need
-            %feedback linearizations virtual control for estimation
+            % Observer called here, runs after controller because we need
+            % feedback linearizations virtual control for estimation
             obj.luoberger_obs(ball_pos, beam_ang, v, dt);  
             obj.init_state = obj.ol_est;
-            % ball_pos = obj.ol_est(1); 
-            % ball_vel = obj.ol_est(2); 
-            % beam_ang = obj.ol_est(3); 
-            % beam_ang_vel = obj.ol_est(4);
+            ball_pos = obj.ol_est(1); 
+            ball_vel = obj.ol_est(2); 
+            beam_ang = obj.ol_est(3); 
+            beam_ang_vel = obj.ol_est(4);
             
 
-            % V_servo = v; 
             % Restict to the safe region as in the original script (I
             % tightened this a bit)
             if beam_ang > beam_ang_max
@@ -147,8 +152,7 @@ classdef studentControllerInterface < matlab.System
             % disp(eig(obj.Ad - obj.L * obj.Cd))
             % disp(obj.Bd)
             obj = setupFeedbackLinearization(obj);
-            obj.fl_lin = false; 
-            % Set up LQR: try 2
+            obj.fl_lin = false ; 
             
         end
         
@@ -163,8 +167,8 @@ classdef studentControllerInterface < matlab.System
     methods(Access = private)
         
         function obj = setupFeedbackLinearization(obj)
-            %% Feedback Linearization: TRY #1
-            %% Given parameters from the PDF
+            % Feedback Linearization: TRY #1
+            % Given parameters from the PDF
             ball_rad = 0.0254;   % Ball radius [m]
             beam_len = 0.4255;   % Beam length [m]
             g_val = 9.81;         % Gravitational acceleration [m/s^2]
@@ -175,13 +179,13 @@ classdef studentControllerInterface < matlab.System
             const_1 = 5*g_val*ball_rad/(7*beam_len);      % const_1 = 5*g*rg/(7*L)
             const_2 = (5/7)*(ball_rad/beam_len)^2;        % const_2 = 5/7*(rg/L)^2
             
-            %% Computed Lie functions
+            % Computed Lie functions
             obj.lie1_func = @(x1,x2,x3,x4) x2;
             obj.lie2_func = @(x1,x2,x3,x4) const_1*sin(x3) - const_2*((beam_len/2) - x1)*x4.^2.*cos(x3).^2;
             obj.lie3_func = @(x1,x2,x3,x4) const_2*x2*x4.^2.*cos(x3).^2 + const_1*x4.*cos(x3) + ...
                 2*const_2*((beam_len/2)-x1)*x4.^3.*cos(x3).*sin(x3) + (2*const_2/tau_val)*((beam_len/2)-x1)*x4.^2.*cos(x3).^2;
             
-            % lie4 = phi(x) + psi(x) * u
+            % lie4 = phi(x) + psi(x) * u;
             % phi(x)
             phi_func = @(x1,x2,x3,x4) ( (-2*const_2*x4.^3.*cos(x3).*sin(x3) - (2*const_2/tau_val)*x4.^2.*cos(x3).^2).*x2 ...
                   + (const_2*x4.^2.*cos(x3).^2).*(const_1*sin(x3) - const_2*((beam_len/2)-x1)*x4.^2.*cos(x3).^2) ...
@@ -199,24 +203,24 @@ classdef studentControllerInterface < matlab.System
 
             obj.lie4_func = @(x1,x2,x3,x4,u) phi_func(x1,x2,x3,x4) + psi_func(x1,x2,x3,x4)*u;
             
-            %% Feedback linearization control law u = (v - phi(x)) / psi(x).
+            % Feedback linearization control law u = (v - phi(x)) / psi(x).
             obj.control_func = @(x1,x2,x3,x4,v) (v - phi_func(x1,x2,x3,x4)) / psi_func(x1,x2,x3,x4);
             
-            %% Output function: y = x1.
+            % Output function: y = x1.
             obj.y_func = @(x1,x2,x3,x4) x1;
         end
         
         function [K] = Feedback_LQR(obj,dt)
             % LQR setup
-            
+            % 
             % Define system matrices
             A = zeros(4,4);
             A(1:3,2:4) = eye(3);
             B = [0; 0; 0; 1]; 
             
-            obj.Q(1,1) = 500; 
-            obj.Q(2,2) = 50; 
-            obj.R = 1; 
+            obj.Q(1,1) = 5; 
+            obj.Q(2,2) = 1; 
+            obj.R = .0001; 
             
             [Ad, Bd] = obj.cont2discrete(A,B, dt); 
             % Compute LQR gain
@@ -225,9 +229,9 @@ classdef studentControllerInterface < matlab.System
         end
 
         function K = lqr_linear(obj, state, ref, dt)
-            %state equations
-
-            %% 2. Define system dynamics: dx/dt = f(x) + g(x)*u
+            % state equations
+            % 
+            % % 2. Define system dynamics: dx/dt = f(x) + g(x)*u
             % Nonlinear dynamics of the ball and beam system
             rg = 0.0254;
             L = 0.4255;
@@ -247,10 +251,10 @@ classdef studentControllerInterface < matlab.System
             B = [0; 0; 0; -k/tau];
             
 
-            % K = obj.ARESolve(jacb, B, Q, R); 
+            
             obj.Q(1,1) = 300;  % Weight on position error
-            obj.Q(2, 2) = 100;
-            obj.R = 4; 
+            obj.Q(2, 2) = 0;
+            obj.R = 0.004; 
             obj.Q(3,3) = 0; 
             obj.Q(4,4) = 0; 
             % K = lqr(jacb, B, obj.Q, obj.R);
@@ -271,7 +275,7 @@ classdef studentControllerInterface < matlab.System
             Pk = Q; 
             for i = 1:400
                 Pk = A' * Pk * A + Q - A' * Pk * B * inv(R + B' * Pk * B) * B' * Pk * A; 
-                % disp(Pk)
+                
             end
            
             K = -inv(R + B' * Pk * B)*B'*Pk*A; 
