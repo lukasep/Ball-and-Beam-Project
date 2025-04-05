@@ -59,7 +59,7 @@ classdef studentControllerInterface < matlab.System
         lie4_func;
         y_func;
         control_func;
-        K;
+        K = [0, 0, 0, 0];
         A = [0, 1, 0, 0; 0, 0, 1 , 0;0, 0, 0,1; 0, 0, 0, 0 ]; 
         B = [0; 0; 0; 1]; 
         C = [1, 0, 0, 0; 0, 0, 1, 0]; 
@@ -114,7 +114,7 @@ classdef studentControllerInterface < matlab.System
                 % obj.K is the optimal gain matrix calculated by LQR
                 % v is then the virtua input for the linearized system
                 K = obj.Feedback_LQR(dt); 
-                v = -K * error;
+                v = K * error;
                 V_servo = obj.control_func(ball_pos, ball_vel, beam_ang, beam_ang_vel, v);
            
                
@@ -140,23 +140,9 @@ classdef studentControllerInterface < matlab.System
                 error_x4 = beam_ang_vel; 
                 error = [error_x1; error_x2; error_x3; error_x4];
                 K = obj.lqr_linear(obj.init_state, ref,dt);
-                v = -K * error;
+                v = K * error;
             
-            
-            A = zeros(4,4);
-            A(1:3,2:4) = eye(3);
-            B = [0; 0; 0; 1];
-            
-            state = [ball_pos; ball_vel; beam_ang; beam_ang_vel];
-            ref = [p_ball_ref; v_ball_ref; 0; 0]; 
-            error_x1 = ball_pos - p_ball_ref; 
-            error_x2 = ball_vel - v_ball_ref; 
-            error_x3 = beam_ang ; 
-            error_x4 = beam_ang_vel; 
-            error = [error_x1; error_x2; error_x3; error_x4];
-            K = obj.lqr_linear(obj.init_state, ref,dt);
-            v = -K * error;
-        
+                 
             V_servo =v;
             end
 
@@ -188,14 +174,14 @@ classdef studentControllerInterface < matlab.System
             % disp(eig(obj.Ad - obj.L * obj.Cd))
             % disp(obj.Bd)
             obj = setupFeedbackLinearization(obj);
-            obj.fl_lin = false ; 
+            obj.fl_lin = true; 
             
 
             %obj.fl_lin = false; 
             if obj.fl_lin == false
-                fprintf('Use Controller 2\n')
-            else
                 fprintf('Use Controller 1\n')
+            else
+                fprintf('Use Controller 2\n')
             end
 
 
@@ -288,7 +274,7 @@ classdef studentControllerInterface < matlab.System
         end
 
         function K = lqr_linear(obj, state, ref, dt)
-
+            
             % state equations
             % 
             % % 2. Define system dynamics: dx/dt = f(x) + g(x)*u
@@ -325,8 +311,9 @@ classdef studentControllerInterface < matlab.System
             obj.Q(3,3) = 0; 
             obj.Q(4,4) = 0; 
             % K = lqr(jacb, B, obj.Q, obj.R);
-            [Ad, Bd] = obj.cont2discrete(jacb,B, dt); 
-            K = obj.ARESolve(Ad, Bd, obj.Q, obj.R);
+            [Ad, Bd] = obj.cont2discrete(jacb,B, dt);
+            K = dlqr(Ad, Bd,obj.Q,obj.R);
+            % K = obj.ARESolve(Ad, Bd, obj.Q, obj.R);
               
         end
 
