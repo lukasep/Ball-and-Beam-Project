@@ -1,3 +1,4 @@
+
 %EE222: Nonlinear Systems
 %Lab Project Phase I: Simulations
 %Soomi Lee, Arvind Kruthiventy, Emily Lukas
@@ -8,6 +9,14 @@
 %the values of kp and kd a lot but they just weren't great.
 %TRY 2: Added LQR. Does work with score of 0.91!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% EE222: Nonlinear Systems
+% Lab Project Phase I: Simulations
+% Soomi Lee, Arvind Kruthiventy, Emily Lukas
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Our Controller Interface
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 classdef studentControllerInterface < matlab.System
     properties (Access = private)
@@ -26,7 +35,11 @@ classdef studentControllerInterface < matlab.System
         % 
         % 0.6;  
         
-        fl_lin = false; 
+        
+        %% CHOOSE WHICH CONTROLLER TO USE:
+        fl_lin = false; % true to use Controller 1, false to use Controller 2
+
+        %% 
         % deriv gain
         L = [22.9338 , 1.0388 ; 
              130.7798 , 12.977; 
@@ -36,6 +49,7 @@ classdef studentControllerInterface < matlab.System
         % 
         ol_est = [0; 0.00; 0; 0]; 
         ol_est_dot = [0 ; 0.00; 0; 0]; 
+        
         % LQR params
         Q = zeros(4,4);
         R = 0.05;
@@ -76,20 +90,25 @@ classdef studentControllerInterface < matlab.System
             % 
             % Extract reference trajectory at the current timestep.
             [p_ball_ref, v_ball_ref, a_ball_ref] = get_ref_traj(t);
+
             % observer 
             if t - obj.t_prev == 0
                 dt = 0.001; 
             else
                 dt = t - obj.t_prev;
             end
+
+            % Observer 
+    
+            % Choose which controller to use
+
             if obj.fl_lin == true
                 error_x1 = obj.y_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - p_ball_ref;
                 error_x2 = obj.lie1_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - v_ball_ref;
                 error_x3 = obj.lie2_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - a_ball_ref;
                 error_x4 = obj.lie3_func(ball_pos, ball_vel, beam_ang, beam_ang_vel) - 0;
                 error = [error_x1; error_x2; error_x3; error_x4];
-                
-                
+             
                 % Apply the LQR gain matrix to calculate the virtual control input
                 % The negative sign ensures negative feedback (reducing error)
                 % obj.K is the optimal gain matrix calculated by LQR
@@ -100,11 +119,28 @@ classdef studentControllerInterface < matlab.System
            
                
                 error
-            % Apply the feedback linearization func
-            else
+            % Apply the feedback linearization fu
            
 
-            % LQR for system linearized around trajectory
+
+                
+            % disp(state_vec)
+            else
+                % LQR for system linearized around trajectory
+                
+                A = zeros(4,4);
+                A(1:3,2:4) = eye(3);
+                B = [0; 0; 0; 1];
+                
+                state = [ball_pos; ball_vel; beam_ang; beam_ang_vel];
+                ref = [p_ball_ref; v_ball_ref; 0; 0]; 
+                error_x1 = ball_pos - p_ball_ref; 
+                error_x2 = ball_vel - v_ball_ref; 
+                error_x3 = beam_ang ; 
+                error_x4 = beam_ang_vel; 
+                error = [error_x1; error_x2; error_x3; error_x4];
+                K = obj.lqr_linear(obj.init_state, ref,dt);
+                v = -K * error;
             
             
             A = zeros(4,4);
@@ -123,16 +159,21 @@ classdef studentControllerInterface < matlab.System
         
             V_servo =v;
             end
+
             % Observer called here, runs after controller because we need
             % feedback linearizations virtual control for estimation
             obj.luoberger_obs(ball_pos, beam_ang, v, dt);  
+
+
+            % Observer called here, runs after controller because we need
+            % feedback linearizations virtual control for estimation
+            obj.luenberger_obs(ball_pos, beam_ang, v, dt);  
             obj.init_state = obj.ol_est;
             ball_pos = obj.ol_est(1); 
             ball_vel = obj.ol_est(2); 
             beam_ang = obj.ol_est(3); 
             beam_ang_vel = obj.ol_est(4);
             
-
             % Restict to the safe region as in the original script (I
             % tightened this a bit)
             if beam_ang > beam_ang_max
@@ -148,12 +189,20 @@ classdef studentControllerInterface < matlab.System
     methods(Access = public)
         function obj = studentControllerInterface
             % Initialize controller by computing the feedback
-            % Feedback Linearization: try 1
             % disp(eig(obj.Ad - obj.L * obj.Cd))
             % disp(obj.Bd)
             obj = setupFeedbackLinearization(obj);
             obj.fl_lin = false ; 
             
+
+            %obj.fl_lin = false; 
+            if obj.fl_lin == false
+                fprintf('Use Controller 2\n')
+            else
+                fprintf('Use Controller 1\n')
+            end
+
+
         end
         
         function [V_servo, theta_d] = stepController(obj, t, ball_pos, ball_vel, beam_angle, beam_angular_vel)
@@ -167,8 +216,16 @@ classdef studentControllerInterface < matlab.System
     methods(Access = private)
         
         function obj = setupFeedbackLinearization(obj)
+
             % Feedback Linearization: TRY #1
             % Given parameters from the PDF
+
+            %% Feedback Linearization:
+            % Note that we had to change this from symbolic variables to
+            % the way they are inputted due to simulink's inability to run
+            % with symbolic vars. 
+            %% Given parameters from the PDF
+
             ball_rad = 0.0254;   % Ball radius [m]
             beam_len = 0.4255;   % Beam length [m]
             g_val = 9.81;         % Gravitational acceleration [m/s^2]
@@ -218,20 +275,31 @@ classdef studentControllerInterface < matlab.System
             A(1:3,2:4) = eye(3);
             B = [0; 0; 0; 1]; 
             
+
             obj.Q(1,1) = 5; 
             obj.Q(2,2) = 1; 
             obj.R = .0001; 
+
+            obj.Q(1,1) = 550; % made this 550 for method 1
+            obj.Q(2,2) = 50;  % made this 50 for method 1
+            obj.R = 1;        % made this 1 for method 1
+
             
             [Ad, Bd] = obj.cont2discrete(A,B, dt); 
             % Compute LQR gain
             % obj.K = lqr(A, B, obj.Q, obj.R);
-            K = obj.ARESolve(Ad, Bd, obj.Q, obj.R); 
+            K = obj.ARESolve(Ad, Bd, obj.Q, obj.R); % compatible with simulink
         end
 
         function K = lqr_linear(obj, state, ref, dt)
+
             % state equations
             % 
             % % 2. Define system dynamics: dx/dt = f(x) + g(x)*u
+
+            % State equations
+            %% 2. Define system dynamics: dx/dt = f(x) + g(x)*u
+
             % Nonlinear dynamics of the ball and beam system
             rg = 0.0254;
             L = 0.4255;
@@ -249,12 +317,15 @@ classdef studentControllerInterface < matlab.System
                     0, 0, 0, 1; 
                     0, 0, 0, -1/tau]; 
             B = [0; 0; 0; -k/tau];
-            
 
-            
             obj.Q(1,1) = 300;  % Weight on position error
             obj.Q(2, 2) = 0;
             obj.R = 0.004; 
+
+            % K = obj.ARESolve(jacb, B, Q, R); 
+            obj.Q(1,1) = 500;  % Weight on position error
+            obj.Q(2, 2) = 100;
+            obj.R = 1; 
             obj.Q(3,3) = 0; 
             obj.Q(4,4) = 0; 
             % K = lqr(jacb, B, obj.Q, obj.R);
@@ -263,8 +334,8 @@ classdef studentControllerInterface < matlab.System
               
         end
 
-        function obj = luoberger_obs(obj, ball_pos, beam_ang,v, dt)
- 
+        function obj = luenberger_obs(obj, ball_pos, beam_ang,v, dt)
+            % The setup for the Luenberger observer
             y_t = [ball_pos; beam_ang]; 
             obj.ol_est_dot = obj.A* obj.ol_est + obj.B * v + obj.L *(y_t - (obj.C * obj.ol_est));
             new_est = obj.ol_est_dot; 

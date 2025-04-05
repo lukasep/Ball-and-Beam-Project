@@ -11,15 +11,25 @@ Soomi Lee, Arvind Kruthiventy, Emily Lukas
 **Observer:**
 - Luenberger Observer
 
-**Results:**
-Feedback Linearization with LQR (no observer):  
-https://github.com/user-attachments/assets/40cfcfb5-cd9b-4e5e-88f5-d397bc236799
+**Results:**  
+Controller 1: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller1video.mp4  
+-Average Tracking Error: 0.0005  
+-Average Energy Consumption: 0.0091  
+-Safety Constraint Violation: 0  
+-Tracking Cost: 0.94  
+-Energy Cost: 0.05  
+-Safety Cost: 0.00  
+**Total Score: 0.98**
 
-Feedback Linearization with LQR (observer):
 
-DLQR:
-
-
+Controller 2: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller2video.mp4  
+-Average Tracking Error: 0.0004  
+-Average Energy Consumption: 0.0309  
+-Safety Constraint Violation: 0  
+-Tracking Cost: 0.67  
+-Energy Cost: 0.15  
+-Safety Cost: 0.00  
+**Total Score: 0.82**
 
 
 ## Project Overview
