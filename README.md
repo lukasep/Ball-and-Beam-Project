@@ -6,13 +6,15 @@ Soomi Lee, Arvind Kruthiventy, Emily Lukas
 
 **Final Controllers:**
 - Feedback Linearization with LQR
-- DLQR
+- Linearization around Trajectory
 
 **Observer:**
 - Luenberger Observer
 
 **Results:**  
-Controller 1: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller1video.mp4  
+Controller 1:  
+Sine wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controller1video.mp4  
+Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/main/controlelr1_sqaure.mp4
 -Average Tracking Error: 0.0005  
 -Average Energy Consumption: 0.0091  
 -Safety Constraint Violation: 0  
