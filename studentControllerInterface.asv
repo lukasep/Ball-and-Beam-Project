@@ -5,8 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Our Controller Interface:
 % Notes: 4/8 only the first method works well (FL_LIN = TRUE)
-% We could probably make the second one better but I was too lazy to find
-% the proper gains. 
+% We could probably make th
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 classdef studentControllerInterface < matlab.System
@@ -182,7 +181,7 @@ classdef studentControllerInterface < matlab.System
             %obj.K = lqr(obj.A, obj.B, obj.Q, obj.R)
             %obj.K = [23.4521   29.3025   17.2402    5.8720]; % MATLAB SINE WAVE-- Score: 0.84
             %obj.K = [100.0000   89.3115   36.3827    8.5303] % MATLAB SQUARE WAVE-- Score: 3.33
-            obj. K = [3.0002   6.0101    8.0129   4.0423]; % SIMULINK SINE WAVE-- Score: 1.5
+            %obj. K = [3.0002   6.0101    8.0129   4.0423]; % SIMULINK SINE WAVE-- Score: 1.5
             %obj.K = [3.0102   6.1143    7.9920   4.0120]; % SIMULINK SQUARE WAVE-- 4.37
 
             % Display which controller is active
