@@ -250,7 +250,6 @@ classdef studentControllerInterface < matlab.System
 
         function state_estimate = runObserver(obj, time_step, previous_estimate, measurements, control_input)
             % Luenberger Observer implementation
-            % Extract state variables for clarity
             ball_position = previous_estimate(1);
             ball_velocity = previous_estimate(2);
             beam_angle = previous_estimate(3);
