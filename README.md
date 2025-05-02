@@ -35,6 +35,14 @@ Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/mai
 -Safety Cost: 0.00  
 **Total Score: 0.82**
 
+## Hardware Results
+
+**EKF + DLQR**
+https://drive.google.com/file/d/16lfA1hqtsux_b8XYsVTjO_jFpt5AUV6K/view?usp=sharing
+
+**EKF + Feedback Linearization**
+https://drive.google.com/file/d/1pr63iDvvTIzFwRYpWROSxpWmfh9TplmH/view?usp=drive_link
+
 
 ## Project Overview
 
