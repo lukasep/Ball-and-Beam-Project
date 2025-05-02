@@ -130,10 +130,10 @@ classdef studentControllerInterface < matlab.System
             end
             obj.control_input = u_final;
             V_servo               = u_final;
-            if p_ball > beam_ang_max
-                V_servo = min(V_servo, 10 * (beam_ang_max - p_ball));
-            elseif p_ball < beam_ang_min
-                V_servo = max(V_servo, 10 * (beam_ang_min - p_ball));
+            if theta > beam_ang_max
+                V_servo = min(V_servo, 10 * (beam_ang_max - theta));
+            elseif theta < beam_ang_min
+                V_servo = max(V_servo, 10 * (beam_ang_min - theta));
             end
             
             est_pos     = updated_state(1);    
