@@ -36,9 +36,11 @@ Square wave animation: https://github.com/lukasep/Ball-and-Beam-Project/blob/mai
 **Total Score: 0.82**
 
 ## Hardware Results
+![image](https://github.com/user-attachments/assets/96dcfe3a-c7b8-4026-a3f0-7f43f8a7db3a)
 
 **EKF + DLQR**
 https://drive.google.com/file/d/16lfA1hqtsux_b8XYsVTjO_jFpt5AUV6K/view?usp=sharing
+
 
 **EKF + Feedback Linearization**
 https://drive.google.com/file/d/1pr63iDvvTIzFwRYpWROSxpWmfh9TplmH/view?usp=drive_link
