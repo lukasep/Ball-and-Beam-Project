@@ -2,6 +2,16 @@
 
 EE222/ME237 Nonlinear Systems, Spring 2025 Starter code and instructions for the course project.
 
+## Hardware Results
+![image](https://github.com/user-attachments/assets/96dcfe3a-c7b8-4026-a3f0-7f43f8a7db3a)
+
+**EKF + DLQR**
+https://drive.google.com/file/d/16lfA1hqtsux_b8XYsVTjO_jFpt5AUV6K/view?usp=sharing
+
+
+**EKF + Feedback Linearization**
+https://drive.google.com/file/d/1pr63iDvvTIzFwRYpWROSxpWmfh9TplmH/view?usp=drive_link
+
 ## Project Overview
 
 This project involves designing and testing nonlinear controllers for a ball and beam system. The objective is to develop controllers that stabilize the ball at a desired position on the beam. You will first implement your controllers in MATLAB simulations and later test them on physical hardware.
