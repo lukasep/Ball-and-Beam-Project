@@ -4,7 +4,7 @@ classdef studentControllerInterface < matlab.System
         input = eye(2);
         A = [0 1 0 0;0 0 1 0;0 0 0 1;0 0 0 0];
         B = [0 0 0 1]';
-        Q = diag([1000, 400, 0.1, 2e-5]);
+        Q = diag([1000, 400, 0.1, 0.1]);
         R = diag(0.055);
         Ki = 2;
         K_fl = [23.4521, 29.3025, 17.2402, 5.8720]; % this was generated for MATLAB SINE WAVE but ended up working for all 
@@ -27,7 +27,9 @@ classdef studentControllerInterface < matlab.System
             L    = 0.4255; 
             g           = 9.81;   
             K    = 1.5;   
-            tau      = 0.025;   
+            tau      = 0.025; 
+            beam_ang_min = -pi/4;
+            beam_ang_max = pi/4;
             if obj.const_1 == 0
                 obj.const_1 = 5*g*r_b/(7*L);
                 obj.const_2 = (5/7)*(r_b/L)^2;
@@ -127,7 +129,13 @@ classdef studentControllerInterface < matlab.System
                 u_final  = u_n - u_int;
             end
             obj.control_input = u_final;
-            V_servo               = u_final;         
+            V_servo               = u_final;
+            if p_ball > beam_ang_max
+                V_servo = min(V_servo, 10 * (beam_ang_max - p_ball));
+            elseif p_ball < beam_ang_min
+                V_servo = max(V_servo, 10 * (beam_ang_min - p_ball));
+            end
+            
             est_pos     = updated_state(1);    
             est_vel     = updated_state(2);     
             est_ang        = updated_state(3);       
